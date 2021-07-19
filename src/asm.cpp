@@ -254,8 +254,8 @@ int Assemble(unsigned char *output, int addr, char *str) {
 	return 0;
 }
 
-///disassembles the opcodes in the buffer assuming the provided address. Uses GetMem() and 6502 current registers to query referenced values. returns a static string buffer.
-char *Disassemble(int addr, uint8 *opcode) {
+///Disassembles the instruction bytes in the buffer using the provided address for trace info. Uses GetMem() and 6502 current registers to query referenced values. Returns a static string buffer.
+char *Disassemble(int addr, uint8 *opcode, bool showTrace) {
 	static char str[64]={0},chr[5]={0};
 	uint16 tmp,tmp2;
 
@@ -333,7 +333,9 @@ char *Disassemble(int addr, uint8 *opcode) {
 		case 0xE1: strcpy(chr,"SBC"); goto _indirectx;
 		_indirectx:
 			indirectX(tmp);
-			sprintf(str,"%s ($%02X,X) @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp));
+			showTrace
+				? sprintf(str,"%s ($%02X,X) @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp))
+				: sprintf(str,"%s ($%02X,X)",                  chr,opcode[1]);
 			break;
 
 		//Zero Page
@@ -359,10 +361,10 @@ char *Disassemble(int addr, uint8 *opcode) {
 		case 0xE5: strcpy(chr,"SBC"); goto _zeropage;
 		case 0xE6: strcpy(chr,"INC"); goto _zeropage;
 		_zeropage:
-		// ################################## Start of SP CODE ###########################
 		// Change width to %04X // don't!
-			sprintf(str,"%s $%02X = #$%02X", chr,opcode[1],GetMem(opcode[1]));
-		// ################################## End of SP CODE ###########################
+			showTrace 
+				? sprintf(str,"%s $%02X = #$%02X", chr,opcode[1],GetMem(opcode[1]))
+				: sprintf(str,"%s $%02X",          chr,opcode[1]);
 			break;
 
 		//#Immediate
@@ -406,7 +408,9 @@ char *Disassemble(int addr, uint8 *opcode) {
 		case 0xEE: strcpy(chr,"INC"); goto _absolute;
 		_absolute:
 			absolute(tmp);
-			sprintf(str,"%s $%04X = #$%02X", chr,tmp,GetMem(tmp));
+			showTrace
+				? sprintf(str,"%s $%04X = #$%02X", chr,tmp,GetMem(tmp))
+				: sprintf(str,"%s $%04X",          chr,tmp);
 			break;
 
 		//branches
@@ -434,7 +438,9 @@ char *Disassemble(int addr, uint8 *opcode) {
 		case 0xF1: strcpy(chr,"SBC"); goto _indirecty;
 		_indirecty:
 			indirectY(tmp);
-			sprintf(str,"%s ($%02X),Y @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp));
+			showTrace
+				? sprintf(str,"%s ($%02X),Y @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp))
+				: sprintf(str,"%s ($%02X),Y",                  chr,opcode[1]); 
 			break;
 
 		//Zero Page,X
@@ -456,10 +462,10 @@ char *Disassemble(int addr, uint8 *opcode) {
 		case 0xF6: strcpy(chr,"INC"); goto _zeropagex;
 		_zeropagex:
 			zpIndex(tmp,RX);
-		// ################################## Start of SP CODE ###########################
 		// Change width to %04X // don't!
-			sprintf(str,"%s $%02X,X @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp));
-		// ################################## End of SP CODE ###########################
+			showTrace
+				? sprintf(str,"%s $%02X,X @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp))
+				: sprintf(str,"%s $%02X,X",                  chr,opcode[1]);
 			break;
 
 		//Absolute,Y
@@ -475,7 +481,9 @@ char *Disassemble(int addr, uint8 *opcode) {
 		_absolutey:
 			absolute(tmp);
 			tmp2=(tmp+RY);
-			sprintf(str,"%s $%04X,Y @ $%04X = #$%02X", chr,tmp,tmp2,GetMem(tmp2));
+			showTrace
+				? sprintf(str,"%s $%04X,Y @ $%04X = #$%02X", chr,tmp,tmp2,GetMem(tmp2))
+				: sprintf(str,"%s $%04X,Y",                  chr,tmp);
 			break;
 
 		//Absolute,X
@@ -497,7 +505,9 @@ char *Disassemble(int addr, uint8 *opcode) {
 		_absolutex:
 			absolute(tmp);
 			tmp2=(tmp+RX);
-			sprintf(str,"%s $%04X,X @ $%04X = #$%02X", chr,tmp,tmp2,GetMem(tmp2));
+			showTrace
+			    ? sprintf(str,"%s $%04X,X @ $%04X = #$%02X", chr,tmp,tmp2,GetMem(tmp2))
+				: sprintf(str,"%s $%04X,X",                  chr,tmp);
 			break;
 
 		//jumps
@@ -514,10 +524,10 @@ char *Disassemble(int addr, uint8 *opcode) {
 		case 0xB6: strcpy(chr,"LDX"); goto _zeropagey;
 		_zeropagey:
 			zpIndex(tmp,RY);
-		// ################################## Start of SP CODE ###########################
 		// Change width to %04X // don't!
-			sprintf(str,"%s $%02X,Y @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp));
-		// ################################## End of SP CODE ###########################
+			showTrace
+				? sprintf(str,"%s $%02X,Y @ $%04X = #$%02X", chr,opcode[1],tmp,GetMem(tmp))
+				: sprintf(str,"%s $%02X,Y",                  chr,opcode[1]);
 			break;
 
 		//UNDEFINED
@@ -525,5 +535,64 @@ char *Disassemble(int addr, uint8 *opcode) {
 
 	}
 
+	return str;
+}
+
+char *DisassembleLine(int addr, bool showTrace, bool showRomOffsets) {
+	uint8 instruction[] = {GetMem(addr), GetMem(addr + 1), GetMem(addr + 2)};
+	return DisassembleData(addr, instruction, showTrace, showRomOffsets);
+}
+
+char *DisassembleData(int addr, uint8 *opcode, bool showTrace, bool showRomOffsets) {
+	static char str[64] = { 0 }, chr[25] = { 0 };
+	char *c;
+	int size, j;
+
+	// TODO: Split out address formatter method
+	if (addr >= 0x8000)
+	{
+		if (showRomOffsets && GetNesFileAddress(addr) != -1)
+		{
+			sprintf(str, " %06X: ", GetNesFileAddress(addr));
+		}
+		else
+		{
+			sprintf(str, "%02X:%04X: ", getBank(addr), addr);
+		}
+	}
+	else
+	{
+		sprintf(str, "  :%04X: ", addr);
+	}
+
+	size = opsize[opcode[0]];
+	if (size == 0)
+	{
+		sprintf(chr, "%02X        UNDEFINED", opcode[0]);
+		strcat(str, chr);
+	}
+	else
+	{
+		if ((addr + size) > 0x10000)
+		{
+			sprintf(chr, "%02X        OVERFLOW", opcode[0]);
+			strcat(str, chr);
+		}
+		else
+		{
+			for (j = 0; j < size; j++)
+			{
+				sprintf(chr, "%02X ", opcode[j]);
+				addr++;
+				strcat(str, chr);
+			}
+			while (size < 3)
+			{
+				strcat(str, "   "); //pad output to align ASM
+				size++;
+			}
+			strcat(strcat(str, " "), Disassemble(addr, opcode, showTrace));
+		}
+	}
 	return str;
 }

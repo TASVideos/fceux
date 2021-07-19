@@ -13,10 +13,9 @@
 #define TOO_MANY_BREAKPOINTS 1
 #define INVALID_BREAKPOINT_CONDITION 3
 
-//extern volatile int userpause; //mbg merge 7/18/06 removed for merging
 extern HWND hDebug;
 
-extern int childwnd,numWPs; //mbg merge 7/18/06 had to make extern
+extern int childwnd,numWPs;
 extern bool debuggerAutoload;
 extern bool debuggerSaveLoadDEBFiles;
 extern bool debuggerDisplayROMoffsets;
@@ -30,7 +29,6 @@ extern char* hexeditorFontName;
 
 void CenterWindow(HWND hwndDlg);
 void DoPatcher(int address,HWND hParent);
-void UpdatePatcher(HWND hwndDlg);
 int GetEditHex(HWND hwndDlg, int id);
 
 extern void AddBreakList();
@@ -39,7 +37,8 @@ extern char* BreakToText(unsigned int num);
 void UpdateDebugger(bool jump_to_pc = true);
 void DoDebug(uint8 halt);
 void DebuggerExit();
-void Disassemble(HWND hWnd, int id, int scrollid, unsigned int addr);
+void DisassembleToWindow(HWND hWnd, int id, int scrollid, unsigned int addr, int skiplines = 0);
+void DisassembleToWindow(HWND hWnd, int id, int scrollid);
 void PrintOffsetToSeekAndBookmarkFields(int offset);
 
 void LoadGameDebuggerData(HWND hwndDlg);

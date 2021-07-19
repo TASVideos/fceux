@@ -31,7 +31,7 @@
     <ProjectGuid>{6893EF44-FEA3-46DF-B236-C4C200F54294}</ProjectGuid>
     <RootNamespace>fceux</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -71,7 +71,7 @@
   <!-- change toolset if it doesnt exist, so people can use 2017 for now -->
   <!-- I can't figure out how to detect if v140_xp is installed in 2017. I would like to use it if possible, but I guess not today -->
   <PropertyGroup Label="Globals" Condition="!Exists('$(VCTargetsPath)\Platforms\$(Platform)\PlatformToolsets\v140_xp\Toolset.props')">
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Globals" Condition="'$(v141_xp_Installed)'=='true'">
     <PlatformToolset>v141_xp</PlatformToolset>
@@ -568,6 +568,7 @@ xcopy /y /d "$(ProjectDir)\..\src\drivers\win\7z_64.dll" "$(OutDir)"</Command>
     <ClCompile Include="..\src\drivers\common\vidblit.cpp" />
     <ClCompile Include="..\src\drivers\win\archive.cpp" />
     <ClCompile Include="..\src\drivers\win\args.cpp" />
+    <ClCompile Include="..\src\drivers\win\assembler.cpp" />
     <ClCompile Include="..\src\drivers\win\aviout.cpp" />
     <ClCompile Include="..\src\drivers\win\cdlogger.cpp" />
     <ClCompile Include="..\src\drivers\win\cheat.cpp" />
@@ -576,6 +577,7 @@ xcopy /y /d "$(ProjectDir)\..\src\drivers\win\7z_64.dll" "$(OutDir)"</Command>
     <ClCompile Include="..\src\drivers\win\debugger.cpp" />
     <ClCompile Include="..\src\drivers\win\debuggersp.cpp" />
     <ClCompile Include="..\src\drivers\win\directories.cpp" />
+    <ClCompile Include="..\src\drivers\win\dumper.cpp" />
     <ClCompile Include="..\src\drivers\win\gui.cpp" />
     <ClCompile Include="..\src\drivers\win\guiconfig.cpp" />
     <ClCompile Include="..\src\drivers\win\header_editor.cpp" />
@@ -596,6 +598,7 @@ xcopy /y /d "$(ProjectDir)\..\src\drivers\win\7z_64.dll" "$(OutDir)"</Command>
     <ClCompile Include="..\src\drivers\win\ntview.cpp" />
     <ClCompile Include="..\src\drivers\win\OutputDS.cpp" />
     <ClCompile Include="..\src\drivers\win\palette.cpp" />
+    <ClCompile Include="..\src\drivers\win\patcher.cpp" />
     <ClCompile Include="..\src\drivers\win\ppuview.cpp" />
     <ClCompile Include="..\src\drivers\win\pref.cpp" />
     <ClCompile Include="..\src\drivers\win\ram_search.cpp" />
@@ -1028,6 +1031,7 @@ xcopy /y /d "$(ProjectDir)\..\src\drivers\win\7z_64.dll" "$(OutDir)"</Command>
     <ClInclude Include="..\src\drivers\common\vidblit.h" />
     <ClInclude Include="..\src\drivers\win\archive.h" />
     <ClInclude Include="..\src\drivers\win\args.h" />
+    <ClInclude Include="..\src\drivers\win\assembler.h" />
     <ClInclude Include="..\src\drivers\win\cdlogger.h" />
     <ClInclude Include="..\src\drivers\win\cheat.h" />
     <ClInclude Include="..\src\drivers\win\common.h" />
@@ -1035,6 +1039,7 @@ xcopy /y /d "$(ProjectDir)\..\src\drivers\win\7z_64.dll" "$(OutDir)"</Command>
     <ClInclude Include="..\src\drivers\win\debugger.h" />
     <ClInclude Include="..\src\drivers\win\debuggersp.h" />
     <ClInclude Include="..\src\drivers\win\directories.h" />
+    <ClInclude Include="..\src\drivers\win\dumper.h" />
     <ClInclude Include="..\src\drivers\win\gui.h" />
     <ClInclude Include="..\src\drivers\win\guiconfig.h" />
     <ClInclude Include="..\src\drivers\win\header_editor.h" />
@@ -1054,6 +1059,7 @@ xcopy /y /d "$(ProjectDir)\..\src\drivers\win\7z_64.dll" "$(OutDir)"</Command>
     <ClInclude Include="..\src\drivers\win\ntview.h" />
     <ClInclude Include="..\src\drivers\win\oakra.h" />
     <ClInclude Include="..\src\drivers\win\palette.h" />
+    <ClInclude Include="..\src\drivers\win\patcher.h" />
     <ClInclude Include="..\src\drivers\win\ppuview.h" />
     <ClInclude Include="..\src\drivers\win\pref.h" />
     <ClInclude Include="..\src\drivers\win\ram_search.h" />

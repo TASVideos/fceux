@@ -108,7 +108,7 @@ public:
 	int registerChanges(int mod_type, int start = 0, int end =-1, int size = 0, const char* comment = NULL, int consecutivenessTag = 0, RowsSelection* frameset = NULL);
 	int registerAdjustLag(int start, int size);
 	void registerMarkersChange(int modificationType, int start = 0, int end =-1, const char* comment = 0);
-	void registerBookmarkSet(int slot, BOOKMARK& backup—opy, int oldCurrentBranch);
+	void registerBookmarkSet(int slot, BOOKMARK& backupCopy, int oldCurrentBranch);
 	int registerBranching(int slot, bool markersWereChanged);
 	void registerRecording(int frameOfChange, uint32 joypadDifferenceBits);
 	int registerImport(MovieData& md, char* filename);

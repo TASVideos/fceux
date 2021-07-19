@@ -2054,8 +2054,6 @@ LRESULT CALLBACK MemViewCallB(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 					if (!symbDebugEnabled)
 					{
 						symbDebugEnabled = true;
-						if (hDebug)
-							CheckDlgButton(hDebug, IDC_DEBUGGER_ENABLE_SYMBOLIC, BST_CHECKED);
 					}
 					UpdateCaption();
 				}

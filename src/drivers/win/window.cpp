@@ -3362,6 +3362,9 @@ bool inline (*GetIsLetterLegal(UINT id))(char letter)
 		// Array Size, Init value in Symbolic Name in Debugger
 		case IDC_EDIT_SYMBOLIC_ARRAY: case IDC_EDIT_SYMBOLIC_INIT:
 
+		// Address boxes in Debugger -> Tools menus
+		case ID_DUMPER_START_ADDR: case ID_DUMPER_END_ADDR:
+
 		// Address, Value, Compare, Known Value, Note equal, Greater than and Less than in Cheat
 		case IDC_CHEAT_ADDR: case IDC_CHEAT_VAL: case IDC_CHEAT_COM:
 		case IDC_CHEAT_VAL_KNOWN: case IDC_CHEAT_VAL_NE_BY:

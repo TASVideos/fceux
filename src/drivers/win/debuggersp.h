@@ -41,6 +41,7 @@ struct MemoryMappedRegister
 
 extern bool symbDebugEnabled;
 extern bool symbRegNames;
+extern bool inlineAddressEnabled;
 extern std::vector<std::pair<unsigned int, std::string>> bookmarks;
 extern int debuggerWasActive;
 
@@ -54,6 +55,7 @@ Name* getNamesPointerForAddress(uint16 address);
 void setNamesPointerForAddress(uint16 address, Name* newNode);
 void loadNameFiles();
 void replaceNames(Name* list, char* str, std::vector<uint16>* addressesLog = 0);
+void replaceRegNames(char* str);
 void AddDebuggerBookmark(HWND hwnd);
 void DeleteDebuggerBookmark(HWND hwnd);
 void EditDebuggerBookmark(HWND hwnd);
@@ -69,5 +71,4 @@ void AddNewSymbolicName(uint16 newAddress, char* newOffset, char* newName, char*
 void DeleteSymbolicName(uint16 address, int size);
 void WriteNameFileToDisk(const char* filename, Name* node);
 
-extern void Disassemble(HWND hWnd, int id, int scrollid, unsigned int addr);
 extern void CenterWindow(HWND hwnd);

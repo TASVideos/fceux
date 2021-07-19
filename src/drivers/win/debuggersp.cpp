@@ -21,6 +21,7 @@
 #include "common.h"
 #include "utils/xstring.h"
 #include "debuggersp.h"
+#include "debugger.h"
 #include "../../fceu.h"
 #include "../../debug.h"
 #include "../../conddebug.h"
@@ -33,18 +34,8 @@ int GetNesFileAddress(int A);
 
 inline int RomPageIndexForAddress(int addr) { return (addr-0x8000)>>(debuggerPageSize); }
 
-//old
-//Name* lastBankNames = 0;
-//Name* loadedBankNames = 0;
-
-//new
 Name* pageNames[32] = {0}; //the maximum number of pages we could have is 32, based on 1KB debuggerPageSize
 
-//old
-//int lastBank = -1;
-//int loadedBank = -1;
-
-//new
 int pageNumbersLoaded[32] = {
 	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -57,6 +48,7 @@ extern char LoadedRomFName[2048];
 char NLfilename[2048];
 bool symbDebugEnabled = true;
 bool symbRegNames = true;
+bool inlineAddressEnabled = false;
 int debuggerWasActive = 0;
 char temp_chr[40] = {0};
 char delimiterChar[2] = "#";
@@ -506,7 +498,7 @@ void freeList(Name* n)
 * The caller needs to make sure that str is large enough.
 * 
 * @param list NL list of address definitions
-* @param str The string where replacing takes place.
+* @param str The string where replacing takes place, including trace data.
 * @param addressesLog Vector for collecting addresses that were replaced by names
 **/
 void replaceNames(Name* list, char* str, std::vector<uint16>* addressesLog)
@@ -543,7 +535,7 @@ void replaceNames(Name* list, char* str, std::vector<uint16>* addressesLog)
 				addrlen = 3;
 			}
 
-			for(;;)
+			while (src)
 			{
 				int myAddrlen = addrlen;
 
@@ -566,24 +558,28 @@ void replaceNames(Name* list, char* str, std::vector<uint16>* addressesLog)
 					myAddrlen = 5;
 				}
 
-				//special hack: sometimes we have #$00, and we dont want to replace that.
-				//(this isn't a problem with $0000 because on the 6502 we ... dont.. have ... #$XXXX ?
-				//honestly, I don't know anything about this CPU. don't tell anyone.
-				//I'm just inferring from the fact that the algorithm previously relied on that assumption...
+				//we actually found an immediate value, don't replace it
 				if(pos[-1] == '#')
 				{
 					src = pos + myAddrlen;
 					continue;
 				}
-				
-				//zero 30-nov-2017 - change how this works so we can display the address still
-				//append beginning part, plus addrlen for the offset
-				strncat(buff,src,pos-src+myAddrlen);
-				//append a space
-				strcat(buff," ");
+
+				if (inlineAddressEnabled)
+				{
+					//append up to and including the address, + a space
+					strncat(buff, src, pos - src + myAddrlen);
+					strcat(buff, " ");
+				}
+				else
+				{
+					//append up to but not including the address
+					strncat(buff, src, pos - src);
+				}
+
 				//append the label
 				strcat(buff, list->name);
-				//begin processing after that offset
+				//begin processing after this offset
 				src = pos + myAddrlen;
 
 				if (addressesLog)
@@ -599,20 +595,43 @@ void replaceNames(Name* list, char* str, std::vector<uint16>* addressesLog)
 		}
 		list = list->next;
 	}
+}
 
-	for (int i = 0; i < RegNameCount; i++) {
-		if (!symbRegNames) break;
+/**
+* Replaces all offsets in a string with the names of the corresponding NES hardware registers
+* The caller needs to make sure that str is large enough.
+*
+* @param str The string where replacing takes place, including trace data.
+**/
+void replaceRegNames(char* str)
+{
+	static char buff[1001];
+	char* pos;
+	char* src;
+
+	for (int i = 0; i < RegNameCount; i++)
+	{
 		// copypaste, because Name* is too complex to abstract
 		*buff = 0;
 		src = str;
 
-		while (pos = strstr(src, RegNames[i].offset)) {
-			*pos = 0;
-			strcat(buff, src);
+		while (pos = strstr(src, RegNames[i].offset))
+		{
+			if (inlineAddressEnabled)
+			{
+				strncat(buff, src, pos - src + 5);
+				strcat(buff, " ");
+			}
+			else
+			{
+				strncat(buff, src, pos - src);
+			}
+
 			strcat(buff, RegNames[i].name);
 			src = pos + 5;
 		}
-		if (*buff) {
+		if (*buff)
+		{
 			strcat(buff, src);
 			strcpy(str, buff);
 		}
@@ -622,6 +641,8 @@ void replaceNames(Name* list, char* str, std::vector<uint16>* addressesLog)
 /**
 * Searches an address node in a list of address nodes. The found node
 * has the same offset as the passed parameter offs.
+* 
+* Could speed this up with an actual data structure...
 *
 * @param node The address node list
 * @offs The offset to search
@@ -899,7 +920,7 @@ void GoToDebuggerBookmark(HWND hwnd)
 	// If no bookmark is selected just return
 	if (selectedItem == LB_ERR) return;
 	unsigned int n = getBookmarkAddress(selectedItem);
-	Disassemble(hwnd, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, n);
+	DisassembleToWindow(hwnd, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, n);
 }
 
 INT_PTR CALLBACK SymbolicNamingCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)

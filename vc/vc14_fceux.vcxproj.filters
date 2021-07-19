@@ -1111,6 +1111,15 @@
     <ClCompile Include="..\src\boards\bs4xxxr.cpp">
       <Filter>boards</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\drivers\win\patcher.cpp">
+      <Filter>drivers\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\drivers\win\assembler.cpp">
+      <Filter>drivers\win</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\drivers\win\dumper.cpp">
+      <Filter>drivers\win</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\drivers\common\args.h">
@@ -1618,6 +1627,15 @@
       <Filter>input</Filter>
     </ClInclude>
     <ClInclude Include="..\src\drivers\win\header_editor.h">
+      <Filter>drivers\win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\drivers\win\patcher.h">
+      <Filter>drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\drivers\win\assembler.h">
+      <Filter>drivers\win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\drivers\win\dumper.h">
       <Filter>drivers\win</Filter>
     </ClInclude>
   </ItemGroup>

@@ -244,7 +244,7 @@ BOOL CALLBACK IDC_TRACER_LOG_WndProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
 				DoDebug(0);
 				if (hDebug)
 				{
-					Disassemble(hDebug, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, offset);
+					DisassembleToWindow(hDebug, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, offset);
 					PrintOffsetToSeekAndBookmarkFields(offset);
 				}
 			}
