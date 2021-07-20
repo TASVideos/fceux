@@ -57,11 +57,14 @@ public:
 	HFONT hFixedFont;
 	int fixedFontWidth;
 	int fixedFontHeight;
+	int fixedFontLineHeight;
 
 	HFONT hIDAFont;
+	int IDAFontLineHeight;
 
 	HFONT hDisasmFont;
-	int disasmFontHeight;
+
+	int disasmLineHeight;
 
 	HFONT hHexeditorFont;
 	int HexeditorFontWidth;
@@ -138,7 +141,7 @@ _OP(DbgRts,    187,  80,  93)      /* Imayou */
 #define SPCLR(pf, name, suf) pf SBCLR(name, suf)
 #define CSCLR(pf, name, suf, op, val) SPCLR(pf, name, suf) op val
 #define CNRGB(pf, name, op, r, g, b, sep) CSCLR(pf, name, R, op, r) sep CSCLR(pf, name, G, op, g) sep CSCLR(pf, name, B, op, b)
-#define PPRGB(name) NULL, CNRGB(&, name, , , , , _COMMA)
+#define PPRGB(name) CNRGB(&, name, , , , , _COMMA), NULL
 #define MKRGB(name) (RGB(SBCLR(name, R), SBCLR(name, G), SBCLR(name, B)))
 #define DEFRGB(name, r, g, b) CNRGB( , name, =, r, g, b, _COMMA)
 #define DCLRGB(name, r, g, b) CNRGB( , name, , , , , _COMMA)

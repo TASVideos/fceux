@@ -790,7 +790,7 @@ static INT_PTR CALLBACK MemWatchCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 			xPositions[i] = r.left;
 
 			// experimental: limit the text length and input to hex values
-			SendDlgItemMessage(hwndDlg, MW_ADDR[i], EM_SETLIMITTEXT, 4, 0);
+			SendDlgItemMessage(hwndDlg, MW_ADDR[i], EM_SETLIMITTEXT, 6, 0);
 			DefaultEditCtrlProc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hwndDlg, MW_ADDR[i]), GWLP_WNDPROC, (LONG_PTR)FilterEditCtrlProc);
 		}
 
@@ -1085,8 +1085,8 @@ void RamChange()
 			{
 				case 0: whichADDR = 0; break;	//Addr 1
 				case 1: whichADDR = 1; break;	//Addr 2
-				case 2: whichADDR = 11; break;	//Addr 12
-				case 3: whichADDR = 12; break;	//Addr 13
+				case 2: whichADDR = 12; break;	//Addr 13
+				case 3: whichADDR = 13; break;	//Addr 14
 			}
 			GetDlgItemText(hwndMemWatch, MW_ADDR[whichADDR], editboxnow[x], 6);	//Get Address value of edit00
 			SetDlgItemText(hwndMemWatch, MW_RMADDR[x], editboxnow[x]); //Put Address value
@@ -1129,11 +1129,11 @@ void RamChange()
 
 			}
 			sprintf(editchangem[x], "%d", editcount[x]);	//Convert counter to text
-			SetDlgItemText(hwndMemWatch, EDIT00_RESULTS+x, editchangem[x]);	//Display text in results box
+			SetDlgItemText(hwndMemWatch, MW_RESULT[x], editchangem[x]);	//Display text in results box
 		}
 		else
 		{
-			SetDlgItemText(hwndMemWatch, MEMW_EDIT00RMADDRESS+x, "");
+			SetDlgItemText(hwndMemWatch, MW_RMADDR[x], "");
 		}
 	} //End of for loop	
 }

@@ -1119,6 +1119,17 @@ bool ALoad(const char *nameo, char* innerFilename, bool silent)
 		{
 			DoDebug(0);
 		}
+
+		extern HWND hWndPal;
+		if (hWndPal)
+		{
+			extern void InvalidatePalettePreviewRect(HWND);
+			InvalidatePalettePreviewRect(hWndPal);
+			extern void UpdatePalettePreviewCaption(HWND);
+			UpdatePalettePreviewCaption(hWndPal);
+			extern void UpdateCurrentPaletteName(HWND);
+			UpdateCurrentPaletteName(hWndPal);
+		}
 	}
 	else
 	{
@@ -3377,6 +3388,8 @@ bool inline (*GetIsLetterLegal(UINT id))(char letter)
 		case MW_ADDR12: case MW_ADDR13: case MW_ADDR14: case MW_ADDR15:
 		case MW_ADDR16: case MW_ADDR17: case MW_ADDR18: case MW_ADDR19:
 		case MW_ADDR20: case MW_ADDR21: case MW_ADDR22: case MW_ADDR23:
+			return IsLetterLegalMemoryWatch;
+
 		case IDC_EDIT_COMPAREADDRESS:
 			return IsLetterLegalHex;
 
@@ -3473,6 +3486,12 @@ inline wchar_t* GetLetterIllegalErrMsg(bool(*IsLetterLegal)(char letter))
 		"you must add a $ prefix to prevent ambiguous.\n"
 		"eg. 10 is a decimal number,\n"
 		"$10 means a hexademical number that is 16 in decimal.";
+	if (IsLetterLegal == IsLetterLegalMemoryWatch)
+		return
+		L"You can only type characters for hexadecimal number(0 - 9, A - F).\n"
+		"To display the value in hex, use a prefix of \"x\" (such as x00FD).\n"
+		"Use the prefix \"!\" to display a 2 byte value.\n"
+		"Use a prefix of \"X\" to watch a 2 byte value in hex.";
 
 	return L"Your input contains invalid characters.";
 }
@@ -3529,4 +3548,9 @@ inline bool IsLetterLegalDecHexMixed(char letter)
 inline bool IsLetterLegalUnsignedDecHexMixed(char letter)
 {
 	return letter >= '0' && letter <= '9' || letter >= 'A' && letter <= 'F' || letter >= 'a' && letter <= 'f' || letter == '$';
+}
+
+inline bool IsLetterLegalMemoryWatch(char letter)
+{
+	return IsLetterLegalHex(letter) || letter == 'X' || letter == 'x' || letter == '!';
 }

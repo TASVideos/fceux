@@ -375,36 +375,42 @@ BEGIN
     EDITTEXT        IDC_NETMOO_PASS,60,182,67,12,ES_PASSWORD
 END
 
-PALCONFIG DIALOGEX 16, 81, 228, 217
+PALCONFIG DIALOGEX 16, 81, 228, 280
 STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Palette Configuration"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    GROUPBOX        "NES Palette",302,10,8,102,81,WS_GROUP
-    DEFPUSHBUTTON   "&Load Palette...",BTN_PALETTE_LOAD,18,39,58,14
-    CONTROL         "Enabled",CHECK_PALETTE_ENABLED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,122,22,87,12
-    CTEXT           "Tint",65463,123,34,85,8,WS_DISABLED
-    CONTROL         "Tint",CTL_TINT_TRACKBAR,"msctls_trackbar32",WS_DISABLED | WS_TABSTOP,121,44,91,11
-    GROUPBOX        "NTSC Color Emulation",101,115,8,103,81,WS_GROUP
-    CTEXT           "Hue",64395,124,59,85,8,WS_DISABLED
-    CONTROL         "Hue",CTL_HUE_TRACKBAR,"msctls_trackbar32",WS_DISABLED | WS_TABSTOP,121,69,91,11
-    CONTROL         "Force Grayscale",CHECK_PALETTE_GRAYSCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,57,85,12
-    CONTROL         "Use Custom Palette",CHECK_PALETTE_CUSTOM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,22,85,12
-    GROUPBOX        "PAL Simulation",IDC_STATIC,10,89,208,66
-    LTEXT           "Saturation:",STATIC_SATVALUE,83,100,58,8
-    CONTROL         "",CTL_PALSAT_TRACKBAR,"msctls_trackbar32",TBS_NOTICKS | WS_TABSTOP,78,110,70,15
-    PUSHBUTTON      "Reset",BTN_PALETTE_RESET,161,132,50,14
-    LTEXT           "Notch:",STATIC_NOTCHVALUE,16,100,46,8
-    CONTROL         "",CTL_PALNOTCH_TRACKBAR,"msctls_trackbar32",TBS_NOTICKS | WS_TABSTOP,11,110,68,15
-    LTEXT           "Sharpness:",STATIC_SHARPVALUE,151,99,60,8
-    CONTROL         "",CTL_PALSHARP_TRACKBAR,"msctls_trackbar32",TBS_NOTICKS | WS_TABSTOP,146,109,71,15
-    LTEXT           "NTSC Color Emulation overrides Internal default Palette.\nIndividual Game Palette overrides Internal+NTSC Palettes.\nCustom Palette overrides all of the above.\nPAL Simulation overrides other choices when PAL filter is selected in Video Configuration.",IDC_STATIC,10,159,208,43
-    LTEXT           "Contrast: ",STATIC_CONTRASTVALUE,16,126,55,8
-    CONTROL         "",CTL_PALCONTRAST_TRACKBAR,"msctls_trackbar32",TBS_NOTICKS | WS_TABSTOP,11,134,67,15
-    LTEXT           "Brightness: ",STATIC_BRIGHTVALUE,83,125,61,8
-    CONTROL         "",CTL_PALBRIGHT_TRACKBAR,"msctls_trackbar32",TBS_NOTICKS | WS_TABSTOP,78,133,70,15
-    CONTROL         "De-emphasis bit swap",CHECK_DEEMPH_SWAP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,73,83,10
-    DEFPUSHBUTTON   "Close",BUTTON_CLOSE,162,195,56,14
+	GROUPBOX        "NES Palette", 302, 10, 8, 102, 81, WS_GROUP
+	CONTROL         "Use Custom Palette", CHECK_PALETTE_CUSTOM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 19, 22, 85, 12
+	DEFPUSHBUTTON   "&Load Palette...", BTN_PALETTE_LOAD, 18, 39, 58, 14
+	CONTROL         "Force Grayscale", CHECK_PALETTE_GRAYSCALE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 19, 57, 85, 12
+	CONTROL         "De-emphasis bit swap", CHECK_DEEMPH_SWAP, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 19, 73, 83, 10
+	GROUPBOX        "NTSC Color Emulation", 101, 115, 8, 103, 81, WS_GROUP
+	CONTROL         "Enabled", CHECK_PALETTE_ENABLED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 122, 22, 87, 12
+	CTEXT           "Tint", CTL_TINT_TEXT, 123, 34, 85, 8, WS_DISABLED
+	CONTROL         "Tint", CTL_TINT_TRACKBAR, "msctls_trackbar32", WS_DISABLED | WS_TABSTOP, 121, 44, 91, 11
+	CTEXT           "Hue", CTL_HUE_TEXT, 124, 59, 85, 8, WS_DISABLED
+	CONTROL         "Hue", CTL_HUE_TRACKBAR, "msctls_trackbar32", WS_DISABLED | WS_TABSTOP, 121, 69, 91, 11
+	GROUPBOX        "PAL Emulation", IDC_STATIC, 10, 90, 208, 66, WS_DISABLED
+	LTEXT           "Notch:", STATIC_NOTCHVALUE, 16, 100, 46, 8, WS_DISABLED
+	CONTROL         "", CTL_PALNOTCH_TRACKBAR, "msctls_trackbar32", TBS_NOTICKS | WS_DISABLED | WS_TABSTOP, 11, 110, 68, 15
+	LTEXT           "Saturation:", STATIC_SATVALUE, 83, 100, 58, 8, WS_DISABLED
+	CONTROL         "", CTL_PALSAT_TRACKBAR, "msctls_trackbar32", TBS_NOTICKS | WS_DISABLED | WS_TABSTOP, 78, 110, 70, 15
+	LTEXT           "Sharpness:", STATIC_SHARPVALUE, 161, 99, 50, 8, WS_DISABLED
+	CONTROL         "", CTL_PALSHARP_TRACKBAR, "msctls_trackbar32", TBS_NOTICKS | WS_DISABLED | WS_TABSTOP, 156, 109, 61, 15
+	LTEXT           "Contrast: ", STATIC_CONTRASTVALUE, 16, 126, 55, 8, WS_DISABLED
+	CONTROL         "", CTL_PALCONTRAST_TRACKBAR, "msctls_trackbar32", TBS_NOTICKS | WS_DISABLED | WS_TABSTOP, 11, 134, 67, 15
+	LTEXT           "Brightness: ", STATIC_BRIGHTVALUE, 83, 125, 61, 8, WS_DISABLED
+	CONTROL         "", CTL_PALBRIGHT_TRACKBAR, "msctls_trackbar32", TBS_NOTICKS | WS_DISABLED | WS_TABSTOP, 78, 133, 70, 15
+	PUSHBUTTON      "Reset", BTN_PALETTE_RESET, 161, 132, 50, 14, WS_DISABLED
+	GROUPBOX        "Preview", IDC_PALETTE_PREVIEW_GROUPBOX, 10, 157, 208, 68
+	CONTROL         "Color index", CHECK_PALETTE_COLOR_INDEX, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 16, 166, 49, 10
+	LTEXT           "Current palette:", IDC_STATIC, 70, 167, 53, 8
+	LTEXT           "None", IDC_PALETTE_CURRENT, 127, 167, 46, 8
+	PUSHBUTTON      "Save...", BTN_PALETTE_SAVE, 177, 163, 38, 14
+	LTEXT           "", IDC_PALETTE_PREVIEW, 15, 178, 198, 43, NOT WS_VISIBLE
+	LTEXT           "NTSC Color Emulation overrides Internal default Palette.\nIndividual Game Palette overrides Internal+NTSC Palettes.\nCustom Palette overrides all of the above.\nPAL Emulation overrides other choices when PAL filter is selected", IDC_STATIC, 10, 227, 217, 33
+	DEFPUSHBUTTON   "Close", BUTTON_CLOSE, 162, 261, 56, 14
 END
 
 POWERPADDIALOG DIALOGEX 30, 123, 131, 119
@@ -1863,13 +1869,13 @@ BEGIN
         BOTTOMMARGIN, 201
     END
 
-    "PALCONFIG", DIALOG
-    BEGIN
-        LEFTMARGIN, 10
-        RIGHTMARGIN, 218
-        TOPMARGIN, 8
-        BOTTOMMARGIN, 209
-    END
+	"PALCONFIG", DIALOG
+		BEGIN
+		LEFTMARGIN, 10
+		RIGHTMARGIN, 218
+		TOPMARGIN, 8
+		BOTTOMMARGIN, 275
+	END
 
     "POWERPADDIALOG", DIALOG
     BEGIN

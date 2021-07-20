@@ -2396,7 +2396,7 @@ LRESULT CALLBACK MemViewCallB(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		case ID_COLOR_HEXEDITOR + 9:
 		{
 			int index = wParam - ID_COLOR_HEXEDITOR;
-			if (ChangeColor(hwnd, &hexcolormenu[index]))
+			if (ChangeColor(hwnd, (CHOOSECOLORINFO*)&hexcolormenu[index]))
 			{
 				UpdateColorTable();
 				ModifyColorMenu(hwnd, GetHexColorMenu(hwnd), &hexcolormenu[index], index, wParam);
@@ -2426,7 +2426,7 @@ LRESULT CALLBACK MemViewCallB(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		case ID_COLOR_CDLOGGER + 9:
 		{
 			int index = wParam - ID_COLOR_CDLOGGER;
-			if (ChangeColor(hwnd, &cdlcolormenu[index]))
+			if (ChangeColor(hwnd, (CHOOSECOLORINFO*)&cdlcolormenu[index]))
 			{
 				UpdateColorTable();
 				ModifyColorMenu(hwnd, GetCdlColorMenu(hwnd), &cdlcolormenu[index], index, wParam);
@@ -2438,7 +2438,7 @@ LRESULT CALLBACK MemViewCallB(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		{
 			RestoreDefaultCdlColor();
 			UpdateColorTable();
-			for (int i = 0; i < sizeof(hexcolormenu) / sizeof(COLORMENU); ++i)
+			for (int i = 0; i < sizeof(cdlcolormenu) / sizeof(COLORMENU); ++i)
 				ModifyColorMenu(hwnd, GetCdlColorMenu(hwnd), &cdlcolormenu[i], i, ID_COLOR_CDLOGGER + i);
 		}
 		break;
@@ -3241,7 +3241,7 @@ void SwitchEditingText(int editingText) {
 	}
 }
 
-bool ChangeColor(HWND hwnd, COLORMENU* item)
+bool ChangeColor(HWND hwnd, CHOOSECOLORINFO* item)
 {
 	int backup = RGB(*item->r, *item->g, *item->b);
 	CHOOSECOLOR choose;
@@ -3249,8 +3249,10 @@ bool ChangeColor(HWND hwnd, COLORMENU* item)
 	choose.lStructSize = sizeof(CHOOSECOLOR);
 	choose.hwndOwner = hwnd;
 	choose.rgbResult = backup;
+	choose.lCustData = (LPARAM)item;
 	choose.lpCustColors = custom_color;
-	choose.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ANYCOLOR;
+	choose.lpfnHook = (LPCCHOOKPROC)ChooseColorHookProc;
+	choose.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ANYCOLOR | CC_ENABLEHOOK;
 	if (ChooseColor(&choose) && choose.rgbResult != backup)
 	{
 		*item->r = GetRValue(choose.rgbResult);
@@ -3270,26 +3272,16 @@ BOOL OpColorMenu(HWND hwnd, HMENU menu, COLORMENU* item, int pos, int id, BOOL (
 	memset(&info, 0, sizeof(MENUITEMINFO));
 	info.cbSize = sizeof(MENUITEMINFO);
 
-	if (item->text)
+	CHOOSECOLORINFO *color_info = (CHOOSECOLORINFO*)item;
+	if (color_info->name)
 	{
-		HDC hdc = GetDC(hwnd);
-		HDC memdc = CreateCompatibleDC(hdc);
-		
-		int width = GetSystemMetrics(SM_CXMENUCHECK);
-		int height = GetSystemMetrics(SM_CYMENUCHECK);
 
-		if (!item->bitmap)
-			item->bitmap = CreateCompatibleBitmap(hdc, width, height);
-		SelectObject(memdc, item->bitmap);
-		HBRUSH brush = CreateSolidBrush(RGB(*item->r, *item->g, *item->b));
-		RECT rect = { 1, 1, width - 1, height - 1};
-		FillRect(memdc, &rect, brush);
-		DeleteObject(brush);
-		DeleteDC(memdc);
-		ReleaseDC(hwnd, hdc);
+		if (item->bitmap)
+			DeleteObject(item->bitmap);
+		item->bitmap = CreateColorBitmap(hwnd, GetSystemMetrics(SM_CXMENUCHECK), GetSystemMetrics(SM_CYMENUCHECK), RGB(*color_info->r, *color_info->g, *color_info->b));
 
 		char menu_str[64];
-		sprintf(menu_str, "%s\t#%02X%02X%02X", item->text, *item->r, *item->g, *item->b);
+		sprintf(menu_str, "%s\t#%02X%02X%02X", color_info->name, *color_info->r, *color_info->g, *color_info->b);
 
 		info.dwTypeData = menu_str;
 		info.cch = strlen(menu_str);
@@ -3306,4 +3298,68 @@ BOOL OpColorMenu(HWND hwnd, HMENU menu, COLORMENU* item, int pos, int id, BOOL (
 	}
 
 	return opMenu(menu, pos, TRUE, &info);
+}
+
+UINT CALLBACK ChooseColorHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
+{
+	static HICON icon;
+
+	switch (uiMsg)
+	{
+		case WM_INITDIALOG:
+		{
+			CHOOSECOLORINFO* item = (CHOOSECOLORINFO*)((CHOOSECOLOR*)lParam)->lCustData;
+
+			char title[128];
+			strcpy(title, "Choose color for ");
+			strcat(title, item->name);
+			SetWindowText(hdlg, title);
+
+			icon = CreateChooseColorIcon(hdlg, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), RGB(*item->r, *item->g, *item->b));
+			SendMessage(hdlg, WM_SETICON, ICON_SMALL, (LPARAM)icon);
+			break;
+		}
+		case WM_CLOSE:
+		case WM_QUIT:
+			DestroyIcon(icon);
+	}
+
+	return FALSE;
+}
+
+HBITMAP CreateColorBitmap(HWND hwnd, int width, int height, COLORREF color)
+{
+
+	HDC hdc = GetDC(hwnd);
+	HDC memdc = CreateCompatibleDC(hdc);
+
+	HBITMAP bitmap = CreateCompatibleBitmap(hdc, width, height);
+	HGDIOBJ oldObj = SelectObject(memdc, bitmap);
+	HBRUSH brush = CreateSolidBrush(color);
+	RECT rect = { 1, 1, width - 1, height - 1 };
+	FillRect(memdc, &rect, brush);
+
+	SelectObject(memdc, oldObj);
+	DeleteObject(brush);
+	DeleteDC(memdc);
+	ReleaseDC(hwnd, hdc);
+
+	return bitmap;
+}
+
+HICON CreateChooseColorIcon(HWND hwnd, int width, int height, COLORREF color)
+{
+
+	HBITMAP bitmap = CreateColorBitmap(hwnd, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), color);
+
+	ICONINFO info;
+	memset(&info, 0, sizeof(ICONINFO));
+	info.hbmColor = bitmap;
+	info.hbmMask = bitmap;
+	info.fIcon = true;
+	HICON icon = CreateIconIndirect(&info);
+
+	DeleteObject(bitmap);
+
+	return icon;
 }

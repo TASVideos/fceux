@@ -114,9 +114,9 @@ struct DBGCOLORMENU {
 
 bool ChangeColor(HWND hwnd, DBGCOLORMENU* item)
 {
-	if (ChangeColor(hwnd, (COLORMENU*)item))
+	if (ChangeColor(hwnd, (CHOOSECOLORINFO*)item))
 	{
-		item->fmt->crTextColor = RGB(*item->menu.r, *item->menu.g, *item->menu.b);
+		item->fmt->crTextColor = RGB(*item->menu.info.r, *item->menu.info.g, *item->menu.info.b);
 		return true;
 	}
 	return false;
@@ -149,28 +149,51 @@ void UpdateOtherDebuggingDialogs()
 	PPUViewDoBlit();		//PPU Viewer
 }
 
-#define DISASM_DEFAULT_WIDTH (debuggerIDAFont ? 540 : 470)
+// owomomo: these values should alwasy sync with default debugger window size changes.
+/*
+  The default width of disasm view.
+  ***NOTE: Currently disasm text is NOT scaled with the screen dpi, so DO NOT use 
+  Muldiv(DISASM_DEFAULT_WIDTH, GetDeviceCaps(hdc, LOGPIXELSY), 96) to convert this
+  value!
+*/
+#define DISASM_DEFAULT_WIDTH (debuggerIDAFont ? 540 : 470) 
 
+/*
+  The left and right margin of the disasm view in the debugger window, it can be
+  caclulated by the size of the debugger and the disasm view. 
+  Here's an fake code example of how to get this value:
+  
+  RECT wndRect, disasmRect;
+  GetWindowRect(hDebug, &wndRect);
+  GetWindowRect(GetDlgItem(hDebug, IDC_DEBUGGER_DISASSEMBLY), &disasmRect);
+  (disasmRect.left - wndRect.left) + (wndRect.right - disasmRect.right);
+
+  The reason why I directly write it here is to deal with the situation when debugger
+  width is narrow that some of the left panel is not shown in the window,
+  (wndRect.right - disasmRect.right) can't get the right value.
+*/
+#define DISASM_MARGIN 378
+
+/*
+  When the window size is smaller than these values, the window itself can be shrinked
+  more, but the panel will keep their minimum size. 
+*/
 #define DEBUGGER_MIN_HEIGHT_LEFT 120 // Minimum height for the left part
 #define DEBUGGER_MIN_HEIGHT_RIGHT 590 // Minimun height for the right part.
+#define DEBUGGER_MIN_WIDTH 380 // Minimum width for debugger
 
-#define DEBUGGER_MIN_WIDTH 360 // Minimum width for debugger
 #define DEBUGGER_DEFAULT_HEIGHT 594 // default height for debugger
-// owomomo: default width of the debugger is depend on the default width of disasm view, so it's not defined here.
-
+/*
+  The default width of the debugger is depend on the default width of disasm view,
+  Since the margin varies from screen dpi but disasm view is not, they cant' use
+  so it's not defined here.
+*/
+// #define DEBUGGER_DEFAULT_WIDTH (DISASM_MARGIN + DISASM_DEFAULT_WIDTH)
 void RestoreSize(HWND hwndDlg)
 {
 	HDC hdc = GetDC(hwndDlg);
-	RECT wndRect, disasmRect;
-	GetWindowRect(hwndDlg, &wndRect);
-	GetWindowRect(GetDlgItem(hwndDlg, IDC_DEBUGGER_DISASSEMBLY), &disasmRect);
-
-	int default_width = (disasmRect.left - wndRect.left) + DISASM_DEFAULT_WIDTH + (wndRect.right - disasmRect.right);
-	int default_height = MulDiv(DEBUGGER_DEFAULT_HEIGHT, GetDeviceCaps(hdc, LOGPIXELSY), 96);
-
+	SetWindowPos(hwndDlg,HWND_TOP, DbgPosX, DbgPosY, MulDiv(DISASM_MARGIN, GetDeviceCaps(hdc, LOGPIXELSY), 96) + DISASM_DEFAULT_WIDTH, MulDiv(DEBUGGER_DEFAULT_HEIGHT, GetDeviceCaps(hdc, LOGPIXELSY), 96), SWP_SHOWWINDOW);
 	ReleaseDC(hwndDlg, hdc);
-	
-	SetWindowPos(hwndDlg,HWND_TOP,DbgPosX,DbgPosY,default_width,default_height,SWP_SHOWWINDOW);
 }
 
 unsigned int NewBreakWindows(HWND hwndDlg, unsigned int num, bool enable)
@@ -483,6 +506,7 @@ void HighlightSyntax(HWND hWnd, int lines)
 		wordbreak = SendDlgItemMessage(hWnd, IDC_DEBUGGER_DISASSEMBLY, EM_FINDWORDBREAK, (WPARAM)WB_RIGHT, (LPARAM)newline.chrg.cpMin + 21);
 		for (int ch = newline.chrg.cpMin; ; ch++)
 		{
+
 			if (debug_wstr[ch] == L'=' || debug_wstr[ch] == L'@' || debug_wstr[ch] == L'\n' || debug_wstr[ch] == L'-' || debug_wstr[ch] == L';')
 			{
 				opbreak = ch;
@@ -592,7 +616,7 @@ void Disassemble(HWND hWnd, int id, int scrollid, unsigned int addr)
 	//figure out how many lines we can draw
 	RECT rect;
 	GetClientRect(GetDlgItem(hWnd, id), &rect);
-	int lines = (rect.bottom-rect.top) / debugSystem->disasmFontHeight;
+	int lines = (rect.bottom-rect.top) / debugSystem->disasmLineHeight;
 
 	debug_wstr[0] = 0;
 	PCLine = -1;
@@ -983,6 +1007,21 @@ void UpdateBreakpointsCaption()
 	SetDlgItemText(hDebug, IDC_DEBUGGER_BREAKPOINTS, str);
 }
 
+int GetDebuggerLineHeight(HWND hwnd)
+{
+	FINDTEXT _newline = newline;
+	_newline.chrg.cpMin = 0;
+	_newline.chrg.cpMax = -1;
+	_newline.chrg.cpMin = SendDlgItemMessage(hwnd, IDC_DEBUGGER_DISASSEMBLY, EM_FINDTEXT, FR_DOWN, (LPARAM)&_newline) + 1;
+	_newline.chrg.cpMax = SendDlgItemMessage(hwnd, IDC_DEBUGGER_DISASSEMBLY, EM_FINDTEXT, FR_DOWN, (LPARAM)&_newline) + 1;
+
+	POINT line1, line2;
+	SendDlgItemMessage(hwnd, IDC_DEBUGGER_DISASSEMBLY, EM_POSFROMCHAR, (WPARAM)&line1, _newline.chrg.cpMin);
+	SendDlgItemMessage(hwnd, IDC_DEBUGGER_DISASSEMBLY, EM_POSFROMCHAR, (WPARAM)&line2, _newline.chrg.cpMax);
+
+	return line2.y - line1.y;
+}
+
 void UpdateDebugger(bool jump_to_pc)
 {
 	//don't do anything if the debugger is not visible
@@ -1003,7 +1042,7 @@ void UpdateDebugger(bool jump_to_pc)
 		// ensure that PC pointer will be visible even after the window was resized
 		RECT rect;
 		GetClientRect(GetDlgItem(hDebug, IDC_DEBUGGER_DISASSEMBLY), &rect);
-		unsigned int lines = (rect.bottom-rect.top) / debugSystem->disasmFontHeight;
+		unsigned int lines = (rect.bottom-rect.top) / debugSystem->disasmLineHeight;
 		if (PC_pointerOffset >= lines)
 			PC_pointerOffset = 0;
 
@@ -1798,7 +1837,7 @@ BOOL CALLBACK IDC_DEBUGGER_DISASSEMBLY_WndProc(HWND hwndDlg, UINT uMsg, WPARAM w
 	{
 		case WM_LBUTTONDBLCLK:
 		{
-			int offset = Debugger_CheckClickingOnAnAddressOrSymbolicName(GET_Y_LPARAM(lParam) / debugSystem->disasmFontHeight, false);
+			int offset = Debugger_CheckClickingOnAnAddressOrSymbolicName(GET_Y_LPARAM(lParam) / debugSystem->disasmLineHeight, false);
 			if (offset != EOF)
 			{
 				// bring "Add Breakpoint" dialog
@@ -1812,7 +1851,7 @@ BOOL CALLBACK IDC_DEBUGGER_DISASSEMBLY_WndProc(HWND hwndDlg, UINT uMsg, WPARAM w
 		}
 		case WM_LBUTTONUP:
 		{
-			Debugger_CheckClickingOnAnAddressOrSymbolicName(GET_Y_LPARAM(lParam) / debugSystem->disasmFontHeight, true);
+			Debugger_CheckClickingOnAnAddressOrSymbolicName(GET_Y_LPARAM(lParam) / debugSystem->disasmLineHeight, true);
 			break;
 		}
 		case WM_RBUTTONDOWN:
@@ -1837,7 +1876,7 @@ BOOL CALLBACK IDC_DEBUGGER_DISASSEMBLY_WndProc(HWND hwndDlg, UINT uMsg, WPARAM w
 			CallWindowProc(IDC_DEBUGGER_DISASSEMBLY_oldWndProc, hwndDlg, WM_LBUTTONDOWN, wParam, lParam);
 			CallWindowProc(IDC_DEBUGGER_DISASSEMBLY_oldWndProc, hwndDlg, WM_LBUTTONUP, wParam, lParam);
 			// try bringing Symbolic Debug Naming dialog
-			int offset = Debugger_CheckClickingOnAnAddressOrSymbolicName(GET_Y_LPARAM(lParam) / debugSystem->disasmFontHeight, false);
+			int offset = Debugger_CheckClickingOnAnAddressOrSymbolicName(GET_Y_LPARAM(lParam) / debugSystem->disasmLineHeight, false);
 			if (offset != EOF)
 			{
 				if (DoSymbolicDebugNaming(offset, hDebug))
@@ -1874,7 +1913,7 @@ BOOL CALLBACK IDC_DEBUGGER_DISASSEMBLY_WndProc(HWND hwndDlg, UINT uMsg, WPARAM w
 			if(mouse_y < 0 || mouse_x < 0)
 				break;
 
-			tmp = mouse_y / debugSystem->disasmFontHeight;
+			tmp = mouse_y / debugSystem->disasmLineHeight;
 			if (tmp < (int)disassembly_addresses.size())
 			{
 				i = disassembly_addresses[tmp];
@@ -1985,7 +2024,6 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 			SetScrollInfo(GetDlgItem(hwndDlg,IDC_DEBUGGER_DISASSEMBLY_VSCR),SB_CTL,&si,TRUE);
 
 			//setup font
-			SendDlgItemMessage(hwndDlg,IDC_DEBUGGER_DISASSEMBLY,WM_SETFONT,(WPARAM)debugSystem->hDisasmFont,FALSE);
 			SendDlgItemMessage(hwndDlg,IDC_DEBUGGER_DISASSEMBLY_LEFT_PANEL,WM_SETFONT,(WPARAM)debugSystem->hFixedFont,FALSE);
 			//SendDlgItemMessage(hwndDlg,IDC_DEBUGGER_VAL_A,WM_SETFONT,(WPARAM)debugSystem->hFixedFont,FALSE);
 			//SendDlgItemMessage(hwndDlg,IDC_DEBUGGER_VAL_X,WM_SETFONT,(WPARAM)debugSystem->hFixedFont,FALSE);
@@ -2035,6 +2073,25 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 
 			// prevent the font of the edit control from screwing up when it contains MBC or characters not contained the current font.
 			SendDlgItemMessage(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, EM_SETLANGOPTIONS, 0, SendDlgItemMessage(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, EM_GETLANGOPTIONS, 0, 0) & ~IMF_AUTOFONT);
+
+			/* owomomo: calculate the actural line height of the disassembly view.
+			the font height is not always equals to the line height in rich edit control.
+			As most developers uses latin letters, the font height and line height are 
+			same in their Windows, but there are many languages aren't.
+			This is probably why this bug is not mentioned and fixed for a long time.
+			*/
+			SetDlgItemText(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, "\r\n\r\n\r\n");
+
+			SendDlgItemMessage(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, WM_SETFONT, (WPARAM)debugSystem->hIDAFont, FALSE);
+			debugSystem->IDAFontLineHeight = GetDebuggerLineHeight(hwndDlg);
+
+			SendDlgItemMessage(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, WM_SETFONT, (WPARAM)debugSystem->hFixedFont, FALSE);
+			debugSystem->fixedFontLineHeight = GetDebuggerLineHeight(hwndDlg);
+
+			debugSystem->hDisasmFont = debuggerIDAFont ? debugSystem->hIDAFont : debugSystem->hFixedFont;
+			debugSystem->disasmLineHeight = debuggerIDAFont ? debugSystem->IDAFontLineHeight : debugSystem->fixedFontLineHeight;
+			if (debuggerIDAFont)
+				SendDlgItemMessage(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, WM_SETFONT, (WPARAM)debugSystem->hDisasmFont, FALSE);
 
 			// subclass editfield
 			IDC_DEBUGGER_DISASSEMBLY_oldWndProc = (WNDPROC)SetWindowLongPtr(GetDlgItem(hwndDlg, IDC_DEBUGGER_DISASSEMBLY), GWLP_WNDPROC, (LONG_PTR)IDC_DEBUGGER_DISASSEMBLY_WndProc);
@@ -2099,8 +2156,6 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 			}
 			break;
 		}
-
-
 		case WM_CLOSE:
 		case WM_QUIT:
 			//exitdebug:
@@ -2139,7 +2194,7 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 						case DEBUGIDAFONT:
 							debuggerIDAFont ^= 1;
 							debugSystem->hDisasmFont = debuggerIDAFont ? debugSystem->hIDAFont : debugSystem->hFixedFont;
-							debugSystem->disasmFontHeight = debuggerIDAFont ? IDAFontSize : debugSystem->fixedFontHeight;
+							debugSystem->disasmLineHeight = debuggerIDAFont ? debugSystem->IDAFontLineHeight : debugSystem->fixedFontLineHeight;
 							SendDlgItemMessage(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, WM_SETFONT, (WPARAM)debugSystem->hDisasmFont, FALSE);
 							UpdateDebugger(false);
 							break;
@@ -2170,7 +2225,7 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 								RestoreDefaultDebugColor();
 								RECT rect;
 								GetClientRect(GetDlgItem(hwndDlg, IDC_DEBUGGER_DISASSEMBLY), &rect);
-								UpdateDisassembleView(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, (rect.bottom - rect.top) / debugSystem->disasmFontHeight);
+								UpdateDisassembleView(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, (rect.bottom - rect.top) / debugSystem->disasmLineHeight);
 								HMENU hcolorpopupmenu = GetSubMenu(GetMenu(hwndDlg), 1);
 								for (int i = 0; i < sizeof(dbgcolormenu) / sizeof(DBGCOLORMENU); ++i)
 									ModifyColorMenu(hwndDlg, hcolorpopupmenu, &dbgcolormenu[i].menu, i, ID_COLOR_DEBUGGER + i);
@@ -2196,7 +2251,7 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 							{
 								RECT rect;
 								GetClientRect(GetDlgItem(hwndDlg, IDC_DEBUGGER_DISASSEMBLY), &rect);
-								UpdateDisassembleView(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, (rect.bottom - rect.top) / debugSystem->disasmFontHeight);
+								UpdateDisassembleView(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, (rect.bottom - rect.top) / debugSystem->disasmLineHeight);
 								ModifyColorMenu(hwndDlg, GetSubMenu(GetMenu(hwndDlg), 1), &dbgcolormenu[index].menu, index, wParam);
 							}
 						}
@@ -2343,11 +2398,11 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 				}
 				SetScrollInfo((HWND)lParam,SB_CTL,&si,TRUE);
 
-				Disassemble(hDebug, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, si.nPos);
+				Disassemble(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, si.nPos);
 				// "Address Bookmark Add" follows the address
 				char str[16];
 				sprintf(str,"%04X", si.nPos);
-				SetDlgItemText(hDebug, IDC_DEBUGGER_BOOKMARK, str);
+				SetDlgItemText(hwndDlg, IDC_DEBUGGER_BOOKMARK, str);
 				break;
 			}
 			case WM_KEYDOWN:
@@ -2364,18 +2419,18 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 				{
 					setString = true;
 					RECT rectDisassembly;
-					GetClientRect(GetDlgItem(hDebug,IDC_DEBUGGER_DISASSEMBLY),&rectDisassembly);
+					GetClientRect(GetDlgItem(hwndDlg,IDC_DEBUGGER_DISASSEMBLY),&rectDisassembly);
 					int height = rectDisassembly.bottom-rectDisassembly.top;
 					mouse_y -= 10;
 					if(mouse_y > height)
 						setString = false;
-					mouse_y /= debugSystem->disasmFontHeight;
+					mouse_y /= debugSystem->disasmLineHeight;
 				}
 
 				if (setString)
-					SetDlgItemText(hDebug, IDC_DEBUGGER_ADDR_LINE, "Leftclick = Inline Assembler. Midclick = Game Genie. Rightclick = Hexeditor.");
+					SetDlgItemText(hwndDlg, IDC_DEBUGGER_ADDR_LINE, "Leftclick = Inline Assembler. Midclick = Game Genie. Rightclick = Hexeditor.");
 				else
-					SetDlgItemText(hDebug, IDC_DEBUGGER_ADDR_LINE, "");
+					SetDlgItemText(hwndDlg, IDC_DEBUGGER_ADDR_LINE, "");
 				break;
 			}
 			case WM_LBUTTONDOWN:
@@ -2390,7 +2445,7 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 				if (FCEUI_EmulationPaused() && (mouse_x > 6) && (mouse_x < 30) && (mouse_y > 10))
 				{
 // ################################## End of SP CODE ###########################
-					int tmp = (mouse_y - 10) / debugSystem->disasmFontHeight;
+					int tmp = (mouse_y - 10) / debugSystem->disasmLineHeight;
 					if (tmp < (int)disassembly_addresses.size())
 					{
 						int i = disassembly_addresses[tmp];
@@ -2412,7 +2467,7 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 				//mbg merge 7/18/06 changed pausing check
 				if (FCEUI_EmulationPaused() && (mouse_x > 6) && (mouse_x < 30) && (mouse_y > 10))
 				{
-					int tmp = (mouse_y - 10) / debugSystem->disasmFontHeight;
+					int tmp = (mouse_y - 10) / debugSystem->disasmLineHeight;
 					if (tmp < (int)disassembly_addresses.size())
 					{
 						int i = disassembly_addresses[tmp];
@@ -2433,7 +2488,7 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 				//mbg merge 7/18/06 changed pausing check
 				if (FCEUI_EmulationPaused() && (mouse_x > 6) && (mouse_x < 30) && (mouse_y > 10))
 				{
-					int tmp = (mouse_y - 10) / debugSystem->disasmFontHeight;
+					int tmp = (mouse_y - 10) / debugSystem->disasmLineHeight;
 					if (tmp < (int)disassembly_addresses.size())
 					{
 						int i = disassembly_addresses[tmp];
@@ -2566,10 +2621,10 @@ INT_PTR CALLBACK DebuggerCallB(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 								{
 									sprintf(str,"%04X", tmp);
 									SetDlgItemText(hwndDlg,IDC_DEBUGGER_VAL_PCSEEK,str);
-									Disassemble(hDebug, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, tmp);
+									Disassemble(hwndDlg, IDC_DEBUGGER_DISASSEMBLY, IDC_DEBUGGER_DISASSEMBLY_VSCR, tmp);
 									// "Address Bookmark Add" follows the address
 									sprintf(str,"%04X", si.nPos);
-									SetDlgItemText(hDebug, IDC_DEBUGGER_BOOKMARK, str);
+									SetDlgItemText(hwndDlg, IDC_DEBUGGER_BOOKMARK, str);
 								}
 								break;
 							}
@@ -2838,7 +2893,6 @@ void DebugSystem::init()
 	SelectObject(hdc,old);
 	DeleteDC(hdc);
 	hDisasmFont = debuggerIDAFont ? hIDAFont : hFixedFont;
-	disasmFontHeight = debuggerIDAFont ? IDAFontSize : fixedFontHeight;
 
 	InitDbgCharFormat();
 

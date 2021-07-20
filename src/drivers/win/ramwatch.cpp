@@ -1295,7 +1295,7 @@ INT_PTR CALLBACK RamWatchProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 										// draw the separator
 										// draw it with a different color when hilighted for eyes easy
-										SelectObject(hdc, state ? SeparatorCache::sepPenSel : SeparatorCache::sepPen);
+										HGDIOBJ oldObj = SelectObject(hdc, state ? SeparatorCache::sepPenSel : SeparatorCache::sepPen);
 										MoveToEx(hdc, rect.left + sepCache.sepOffX, rect.top + SeparatorCache::sepOffY, NULL);
 										LineTo(hdc, rect.right, rect.top + SeparatorCache::sepOffY);
 
@@ -1309,6 +1309,7 @@ INT_PTR CALLBACK RamWatchProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 											SelectObject(hdc, SeparatorCache::sepFon);
 											DrawText(hdc, comment, strlen(comment), &rect, DT_LEFT);
 										}
+										SelectObject(hdc, oldObj);
 									}
 									break;
 
@@ -1684,8 +1685,9 @@ SeparatorCache::SeparatorCache(HWND hwnd, char* text) {
 		SIZE size;
 
 		HDC hdc = GetDC(hwnd);
-		SelectFont(hdc, sepFon);
+		HGDIOBJ oldObj = SelectFont(hdc, sepFon);
 		GetTextExtentPoint(hdc, text, strlen(text), &size);
+		SelectObject(hdc, oldObj);
 		ReleaseDC(hwnd, hdc);
 
 		sepOffX = size.cx + 8;

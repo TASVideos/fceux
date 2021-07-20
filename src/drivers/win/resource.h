@@ -512,6 +512,7 @@
 #define IDC_CHEAT_AUTOLOADSAVE          1013
 #define IDC_CHECK_SHORTCUT              1013
 #define IDC_CHECK_SYMBOLIC_ARRAY        1013
+#define CHECK_PALETTE_COLOR_INDEX       1013
 #define IDC_RESTORE_BUTTON              1014
 #define MW_VAL04                        1014
 #define MW_NAME05                       1015
@@ -609,11 +610,15 @@
 #define IDC_DEBUGGER_TEXT_A             1049
 #define IDC_SUBMAPPER_TEXT              1050
 #define MW_VAL16                        1050
+#define IDC_PALETTE_PREVIEW             1050
 #define IDC_PRGROM_TEXT                 1051
 #define MW_NAME17                       1051
+#define IDC_PALETTE_PREVIEW_GROUPBOX    1051
 #define MW_ADDR17                       1052
+#define IDC_PALETTE_CURRENT             1052
 #define IDC_CHRROM_TEXT                 1053
 #define MW_VAL17                        1053
+#define BTN_PALETTE_SAVE                1053
 #define MW_NAME18                       1054
 #define MW_ADDR18                       1055
 #define IDC_PRGRAM_TEXT                 1055
@@ -1208,9 +1213,11 @@
 #define CHEAT_CONTEXT_POSSI_ADDCHEAT    40601
 #define CHEAT_CONTEXT_POSSI_ADDTORAMWATCH 40603
 #define IDC_DEBUGGER_BOOKMARKS          45535
+#define CTL_HUE_TEXT                    64395
 #define MW_VALUELABEL2                  65423
 #define MW_VALUELABEL1                  65426
 #define IDC_STATIC_SLASHTEXT            65442
+#define CTL_TINT_TEXT                   65463
 #define IDC_DEBUGGER_TEXT_SPR           65530
 #define IDC_DEBUGGER_TEXT_PPU           65531
 #define IDC_BOOKMARK_NAME_TEXT          65532
@@ -1227,7 +1234,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        313
 #define _APS_NEXT_COMMAND_VALUE         40012
-#define _APS_NEXT_CONTROL_VALUE         1050
+#define _APS_NEXT_CONTROL_VALUE         1054
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
